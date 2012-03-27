@@ -7,3 +7,6 @@ There are 4 possible params:
 
 Usage example:
 php lastFmArtists.php --user=desmax --artists-limit=20 --file=artists --plays-limit=10
+
+Or with short params:
+php lastFmArtists.php -u=desmax -a=20 -f=artists -p=10
