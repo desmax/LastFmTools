@@ -7,3 +7,13 @@ There are 4 possible params:
 
 Usage example:
 php lastFmArtists.php --user=desmax --artists-limit=20 --file=artists --plays-limit=10
+
+Also you can create config file with the same params. By default script will try to find config file with name config.ini
+in the same directory that it has been placed, but you can override this path by specifying cli param --config
+
+Here is example of config file:
+user = desmax
+file = /home/maxim/artists
+#artists-limit = 9999
+artists-limit = 4000
+plays-limit = 25

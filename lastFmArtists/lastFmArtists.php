@@ -27,11 +27,19 @@ class lastFmArtists {
     protected $_artistsLimit = 9999;
 
     /**
-     * @var null|string $_outputFile
      * File to write down script output. By default outputs to stdout
+     * @var null|string $_outputFile
      * Add param "--file=filepath" to command line to override this
      */
     protected $_outputFile = null;
+
+    /**
+     * File path to config. Could be used instead command line params.
+     * File should be in INI format.
+     * @var string $_configFile
+     * Add param "--config=filepath" to command line to override this
+     */
+    protected $_configFile = 'config.ini';
 
     /**
      * Used to interact with lastFm api
@@ -64,28 +72,32 @@ class lastFmArtists {
     CONST FILE_KEY = 'file';
 
     /**
-     * Initializes class config with params from command line
+     * Command line key to specify config file name
+     * @var string CONFIG_KEY
+     */
+    CONST CONFIG_KEY = 'config';
+
+    /**
+     * Puts artists list separated by comma to specific output
      * @return void
      */
-    protected function _initConfigFromCli() {
-        global $argc, $argv;
-
-        for($i = 1; $i < $argc; $i++) {
-            $option = explode('=', ltrim($argv[$i], '--'));
-            if(!isset($option[1])) {
-                continue;
+    public static function start() {
+        try {
+            $lastFmArtists = new self;
+            $lastFmArtists->_initConfig();
+            $artistsList = $lastFmArtists->_getArtists();
+            if(empty($artistsList)) {
+                return;
             }
-            $options[$option[0]] = $option[1];
+            $artistsList = implode(', ', $artistsList);
+            if($lastFmArtists->_outputFile) {
+                file_put_contents($lastFmArtists->_outputFile, $artistsList);
+            } else {
+                echo $artistsList . PHP_EOL;
+            }
+        } catch(Exception $ex) {
+            echo $ex->getMessage() . PHP_EOL;
         }
-
-        if(isset($options[self::USER_KEY])) {
-            $this->_username = (string) $options[self::USER_KEY];
-        } else {
-            throw new Exception('Please specify user name');
-        }
-        isset($options[self::FILE_KEY]) && $this->_outputFile = (string) $options[self::FILE_KEY];
-        isset($options[self::PLAYS_LIMIT_KEY]) && $this->_playsLimit = (int) $options[self::PLAYS_LIMIT_KEY];
-        isset($options[self::ARTISTS_LIMIT_KEY]) && $this->_artistsLimit = (int) $options[self::ARTISTS_LIMIT_KEY];
     }
 
     /**
@@ -121,26 +133,76 @@ class lastFmArtists {
     }
 
     /**
-     * Puts artists list separated by comma to specific output
-     * @return void
+     * Initializes class config
      */
-    public static function start() {
-        try {
-            $lastFmArtists = new self;
-            $lastFmArtists->_initConfigFromCli();
-            $artistsList = $lastFmArtists->_getArtists();
-            if(empty($artistsList)) {
-                return;
+    protected function _initConfig() {
+        $fileOptions = $this->_getConfigFromFile();
+        $cliOptions = $this->_getConfigFromCli();
+
+        $options = array_merge($fileOptions, $cliOptions);
+        $this->_setOptions($options);
+    }
+
+    /**
+     * Initializes class config with params from command line
+     * @return array
+     */
+    protected function _getConfigFromCli() {
+        global $argc, $argv;
+        $options = array();
+
+        for($i = 1; $i < $argc; $i++) {
+            $option = explode('=', ltrim($argv[$i], '--'));
+            if(!isset($option[1])) {
+                continue;
             }
-            $artistsList = implode(', ', $artistsList);
-            if($lastFmArtists->_outputFile) {
-                file_put_contents($lastFmArtists->_outputFile, $artistsList);
-            } else {
-                echo $artistsList . PHP_EOL;
-            }
-        } catch(Exception $ex) {
-            echo $ex->getMessage() . PHP_EOL;
+            $options[$option[0]] = $option[1];
         }
+
+        return $options;
+    }
+
+    /**
+     * Initializes class config with params from config file
+     * @return array
+     */
+    protected function _getConfigFromFile() {
+        $options = array();
+        if($this->_configFileExists()) {
+            $options = parse_ini_file($this->_configFile);
+        }
+
+        return $options;
+    }
+
+    /**
+     * Checks if config file exists
+     * @return bool
+     */
+    protected function _configFileExists() {
+        $result = false;
+
+        $scriptDir = getcwd() . DIRECTORY_SEPARATOR. dirname($_SERVER['SCRIPT_NAME']);
+        if(file_exists($scriptDir . DIRECTORY_SEPARATOR . $this->_configFile)) {
+            $this->_configFile = $scriptDir . DIRECTORY_SEPARATOR . $this->_configFile;
+            $result = true;
+        } elseif(file_exists($this->_configFile)) {
+            $result = true;
+        }
+
+        return $result;
+    }
+
+    protected function _setOptions($options) {
+        if(isset($options[self::USER_KEY])) {
+            $this->_username = (string) $options[self::USER_KEY];
+        } else {
+            throw new Exception('Please specify user name');
+        }
+        isset($options[self::FILE_KEY]) && $this->_outputFile = (string) $options[self::FILE_KEY];
+        isset($options[self::PLAYS_LIMIT_KEY]) && $this->_playsLimit = (int) $options[self::PLAYS_LIMIT_KEY];
+        isset($options[self::ARTISTS_LIMIT_KEY]) && $this->_artistsLimit = (int) $options[self::ARTISTS_LIMIT_KEY];
+        isset($options[self::CONFIG_KEY]) && $this->_configFile = (int) $options[self::CONFIG_KEY];
     }
 }
 
