@@ -40,42 +40,52 @@ class lastFmArtists {
     CONST API_KEY = 'b25b959554ed76058ac220b7b2e0a026';
 
     /**
-     * Command line key to specify lastFm user name
+     * Command line key to specify lastFm user name. Short and long options.
      * @var string USER_KEY
+     * @var string USER_SHORT_KEY
      */
     CONST USER_KEY = 'user';
+    CONST USER_SHORT_KEY = 'u';
 
     /**
-     * Command line key to specify plays limit
+     * Command line key to specify plays limit. Short and long options.
      * @var string PLAYS_LIMIT_KEY
+     * @var string PLAYS_LIMIT_SHORT_KEY
      */
     CONST PLAYS_LIMIT_KEY = 'plays-limit';
+    CONST PLAYS_LIMIT_SHORT_KEY = 'p';
 
     /**
-     * Command line key to specify artists limit
+     * Command line key to specify artists limit. Short and long options.
      * @var string ARTISTS_LIMIT_KEY
+     * @var string ARTISTS_LIMIT_SHORT_KEY
      */
     CONST ARTISTS_LIMIT_KEY = 'artists-limit';
+    CONST ARTISTS_LIMIT_SHORT_KEY = 'a';
 
     /**
-     * Command line key to specify output file name
+     * Command line key to specify output file name. Short and long options.
      * @var string FILE_KEY
+     * @var string FILE_SHORT_KEY
      */
     CONST FILE_KEY = 'file';
+    CONST FILE_SHORT_KEY = 'f';
 
     /**
      * Initializes class config with params from command line
      * @return void
      */
     protected function _initConfigFromCli() {
-        global $argc, $argv;
-
-        for($i = 1; $i < $argc; $i++) {
-            $option = explode('=', ltrim($argv[$i], '--'));
-            if(!isset($option[1])) {
-                continue;
-            }
-            $options[$option[0]] = $option[1];
+        $parameters = array(self::USER_SHORT_KEY . ':' => self::USER_KEY . ':',
+            self::PLAYS_LIMIT_SHORT_KEY . '::'         => self::PLAYS_LIMIT_KEY . '::',
+            self::ARTISTS_LIMIT_SHORT_KEY . '::'       => self::ARTISTS_LIMIT_KEY . '::',
+            self::FILE_SHORT_KEY . '::'                => self::FILE_KEY . '::'
+        );
+        $options = getopt(implode('', array_keys($parameters)), $parameters);
+        foreach($parameters as $shortKey => $key) {
+            $shortKey = rtrim($shortKey, ':');
+            $key = rtrim($key, ':');
+            isset($options[$shortKey]) && $options[$key] = $options[$shortKey];
         }
 
         if(isset($options[self::USER_KEY])) {
@@ -110,11 +120,13 @@ class lastFmArtists {
         curl_close($curl);
 
         $xml = simplexml_load_string($xmlString);
-        foreach($xml->xpath('/lfm[@status="ok"]/artists/artist') as $artist) {
-            if($artist->playcount < $this->_playsLimit) {
-                break;
+        if($xml) {
+            foreach($xml->xpath('/lfm[@status="ok"]/artists/artist') as $artist) {
+                if($artist->playcount < $this->_playsLimit) {
+                    break;
+                }
+                $result[] = $artist->name;
             }
-            $result[] = $artist->name;
         }
 
         return $result;
