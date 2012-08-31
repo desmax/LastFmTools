@@ -1,0 +1,22 @@
+This script interacts with last fm api to fetch list of artists that user has played
+There are 4 possible params:
+1. --user - Used to specify last fm user name. Required param.
+2. --plays-limit - Used to specify count of artist plays after which script will end parsing. Default is 1.
+3. --artists-limit - Used to specify maximum artists count that can be processed. Default is 9999.
+4. --file - Accepts path to a file. Used to save fetched artists list. If no file specified than all will be outputted to stdout.
+
+Usage example:
+php lastFmArtists.php --user=desmax --artists-limit=20 --file=artists --plays-limit=10
+
+Or with short params:
+php lastFmArtists.php -u=desmax -a=20 -f=artists -p=10
+
+Also you can create config file with the same params. By default script will try to find config file with name config.ini
+in the same directory that it has been placed, but you can override this path by specifying cli param --config
+
+Here is example of config file:
+user = desmax
+file = /home/maxim/artists
+#artists-limit = 9999
+artists-limit = 4000
+plays-limit = 25
